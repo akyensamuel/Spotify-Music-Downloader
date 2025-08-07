@@ -1,0 +1,100 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads-dev/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.virtualEnv/
+.venv/
+venv/
+ENV/
+env/
+.env
+
+# Downloaded files
+downloads/
+music/
+audio/
+
+# FFmpeg binaries (if stored locally)
+ffmpeg/
+ffmpeg.exe
+ffprobe.exe
+
+# Spotify API cache and credentials
+.cache
+.cache-*
+spotify_token.json
+
+# Personal credentials (if stored in separate files)
+credentials.py
+config.py
+secrets.py
+.env.*
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Audio files (in case they end up in root directory)
+*.mp3
+*.wav
+*.flac
+*.aac
+*.ogg
+*.m4a
+*.webm
+*.mp4
+*.wma
+
+# Backup files
+*.bak
+*.backup
+
+# Test files
+test_*.py
+*_test.py
+tests/
+test/
