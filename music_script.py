@@ -3,16 +3,17 @@ import time
 from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 import spotipy
 import yt_dlp
+from decouple import config
 
-SPOTIFY_CLIENT_ID = '38d0826cbb684e5bbaf5b7e31025046b'
-SPOTIFY_CLIENT_SECRET = '45d40b9d6d11466e8bdb44ba73721373'
-SPOTIFY_REDIRECT_URI = 'http://127.0.0.1:8888/callback'
+SPOTIFY_CLIENT_ID = config('SPOTIFY_CLIENT_ID')
+SPOTIFY_CLIENT_SECRET = config('SPOTIFY_CLIENT_SECRET')
+SPOTIFY_REDIRECT_URI = config('SPOTIFY_REDIRECT_URI')
 SCOPE = 'playlist-read-private playlist-read-collaborative'
 
 def create_spotify_client_with_user_auth():
     """Create Spotify client with user authentication (can access private playlists)"""
     print("Setting up user authentication...")
-    print("⚠ A browser window will open for Spotify login.")
+    print("A browser window will open for Spotify login.")
     print("Please complete the authentication in your browser and return here.")
     
     # Small delay to let user read the message
@@ -39,11 +40,11 @@ def create_spotify_client_with_user_auth():
     # Test authentication with a simple call
     try:
         user_info = sp.current_user()
-        print(f"✓ Successfully authenticated as: {user_info.get('display_name', 'Unknown User')}")
+        print(f"Successfully authenticated as: {user_info.get('display_name', 'Unknown User')}")
         time.sleep(1)  # Brief pause for user to see success message
         return sp
     except Exception as e:
-        print(f"✗ Authentication test failed: {e}")
+        print(f"Authentication test failed: {e}")
         print("Please try again and make sure to complete the browser authentication.")
         raise e
 
@@ -64,10 +65,10 @@ def debug_playlist_access(sp, playlist_id):
     try:
         print("Test 1: Basic playlist access...")
         playlist = sp.playlist(playlist_id, fields="id,name,public,owner,tracks.total")
-        print(f"✓ Basic access successful: '{playlist['name']}' by {playlist['owner']['display_name']}")
+        print(f"Basic access successful: '{playlist['name']}' by {playlist['owner']['display_name']}")
         return True
     except spotipy.exceptions.SpotifyException as e:
-        print(f"✗ Basic access failed: {e}")
+        print(f"Basic access failed: {e}")
     
     # Test 2: Try with different markets
     markets = ['US', 'GB', 'CA', 'AU', 'DE', None]
@@ -75,10 +76,10 @@ def debug_playlist_access(sp, playlist_id):
         try:
             print(f"Test 2: Trying with market={market}...")
             playlist = sp.playlist(playlist_id, market=market, fields="id,name,public,owner")
-            print(f"✓ Success with market {market}: '{playlist['name']}'")
+            print(f"Success with market {market}: '{playlist['name']}'")
             return True
         except spotipy.exceptions.SpotifyException as e:
-            print(f"✗ Failed with market {market}: {e}")
+            print(f"Failed with market {market}: {e}")
     
     # Test 3: Try to search for the playlist
     try:
@@ -87,16 +88,16 @@ def debug_playlist_access(sp, playlist_id):
         if results['playlists']['items']:
             found_playlist = results['playlists']['items'][0]
             found_id = found_playlist['id']
-            print(f"✓ Found via search: '{found_playlist['name']}' by {found_playlist['owner']['display_name']}")
+            print(f"Found via search: '{found_playlist['name']}' by {found_playlist['owner']['display_name']}")
             print(f"  Search returned ID: {found_id}")
             print(f"  Original ID:        {playlist_id}")
             if found_id != playlist_id:
-                print("  ⚠ Note: Search returned a different playlist ID!")
+                print(" Note: Search returned a different playlist ID!")
             return True
         else:
-            print("✗ No results found via search")
+            print("No results found via search")
     except Exception as e:
-        print(f"✗ Search failed: {e}")
+        print(f"Search failed: {e}")
     
     return False
 
@@ -112,7 +113,7 @@ def fetch_playlist_tracks(sp, playlist_id, auth_type="user"):
             
         except spotipy.exceptions.SpotifyException as e:
             if "404" in str(e):
-                print("✗ Error: Playlist not found or not accessible.")
+                print("Error: Playlist not found or not accessible.")
                 
                 # Run debug tests
                 print("Running diagnostic tests...")
@@ -129,11 +130,11 @@ def fetch_playlist_tracks(sp, playlist_id, auth_type="user"):
                             
                             # Try with the correct ID
                             playlist_info = sp.playlist(correct_id)
-                            print(f"✓ Successfully accessed playlist with correct ID!")
+                            print(f"Successfully accessed playlist with correct ID!")
                             # Update playlist_id for the rest of the function
                             playlist_id = correct_id
                         else:
-                            print("✗ Could not find playlist in search results")
+                            print("Could not find playlist in search results")
                             return []
                     except Exception as e:
                         print(f"✗ Failed to use search results: {e}")
@@ -164,19 +165,19 @@ def fetch_playlist_tracks(sp, playlist_id, auth_type="user"):
                 
                 # Handle unavailable/removed tracks
                 if track is None:
-                    print(f"⚠ Track {total_tracks}: [UNAVAILABLE/REMOVED]")
+                    print(f"Track {total_tracks}: [UNAVAILABLE/REMOVED]")
                     unavailable_tracks += 1
                     continue
                 
                 # Handle tracks without artists (edge case)
                 if not track['artists']:
-                    print(f"⚠ Track {total_tracks}: '{track['name']}' has no artist info")
+                    print(f"Track {total_tracks}: '{track['name']}' has no artist info")
                     unavailable_tracks += 1
                     continue
                 
                 # Check if track is playable
                 if track.get('is_playable', True) == False:
-                    print(f"⚠ Track {total_tracks}: '{track['name']}' is not playable in your region")
+                    print(f"Track {total_tracks}: '{track['name']}' is not playable in your region")
                     unavailable_tracks += 1
                     continue
                 
@@ -191,21 +192,21 @@ def fetch_playlist_tracks(sp, playlist_id, auth_type="user"):
 
         print(f"Successfully extracted {len(tracks)} playable tracks using {auth_type} authentication")
         if unavailable_tracks > 0:
-            print(f"⚠ {unavailable_tracks} tracks were unavailable or not playable")
+            print(f"{unavailable_tracks} tracks were unavailable or not playable")
 
         return tracks
 
     except spotipy.exceptions.SpotifyException as e:
-        print(f"✗ Spotify API Error: {e}")
+        print(f"Spotify API Error: {e}")
         if "Invalid client" in str(e):
-            print("→ Check your Spotify API credentials (Client ID and Client Secret)")
+            print("Check your Spotify API credentials (Client ID and Client Secret)")
         elif "401" in str(e):
-            print("→ Authentication failed. Your credentials may be invalid or expired.")
+            print("Authentication failed. Your credentials may be invalid or expired.")
         elif "403" in str(e):
-            print("→ Access forbidden. You may not have permission to access this playlist.")
+            print("Access forbidden. You may not have permission to access this playlist.")
         raise e
     except Exception as e:
-        print(f"✗ Unexpected error: {e}")
+        print(f"Unexpected error: {e}")
         raise e
 
 def get_spotify_tracks(playlist_url):
@@ -247,7 +248,7 @@ def download_from_youtube(search_query, output_folder='downloads'):
         print("FFmpeg detected - will convert to MP3")
     except:
         ffmpeg_available = False
-        print("⚠ FFmpeg not found - will download as original format (webm/mp4)")
+        print("FFmpeg not found - will download as original format (webm/mp4)")
     
     if ffmpeg_available:
         # With FFmpeg - convert to MP3
@@ -301,7 +302,7 @@ def download_spotify_playlist(playlist_url):
         print("  - RapCaviar: https://open.spotify.com/playlist/37i9dQZF1DX0XUsuxWHRQd")
         return
     
-    print(f"\n✓ Found {len(tracks)} tracks!")
+    print(f"\n Found {len(tracks)} tracks!")
     
     # Ask user if they want to proceed with download
     while True:
@@ -340,7 +341,7 @@ def download_spotify_playlist(playlist_url):
     print(f"\n=== Download Summary ===")
     print(f"✓ Successful: {successful_downloads}")
     if failed_downloads > 0:
-        print(f"✗ Failed: {failed_downloads}")
+        print(f" Failed: {failed_downloads}")
     print(f"Total processed: {len(tracks)}")
     print("Downloads completed!")
 
@@ -353,11 +354,11 @@ if __name__ == "__main__":
     spotify_url = input("Enter Spotify playlist URL: ").strip()
     
     if not spotify_url:
-        print("✗ Error: No URL provided")
+        print(" Error: No URL provided")
         exit(1)
     
     if "spotify.com" not in spotify_url and len(spotify_url) != 22:
-        print("✗ Error: Invalid Spotify URL or playlist ID")
+        print(" Error: Invalid Spotify URL or playlist ID")
         print("Please provide either:")
         print("  - Full Spotify playlist URL (https://open.spotify.com/playlist/...)")
         print("  - Just the playlist ID (22 characters)")
