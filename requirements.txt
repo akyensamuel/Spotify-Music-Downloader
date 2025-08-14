@@ -10,12 +10,16 @@ python-decouple>=3.8
 # Spotify API
 spotipy>=2.25.1
 
-# YouTube downloading (for legacy scripts)
+# YouTube downloading and audio processing
 yt-dlp>=2025.7.21
+ffmpeg-python>=0.2.0
 
-# Additional dependencies
+# HTTP and utilities
 requests>=2.32.0
-redis>=6.3.0
+urllib3>=2.2.0
+
+# Vercel deployment (optional)
+# vercel>=1.1.0
 
 # Auto-installed dependencies (can be removed if not directly used)
 # asgiref>=3.9.1

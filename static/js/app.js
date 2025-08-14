@@ -66,11 +66,11 @@ class PlaylistDownloader {
         this.hidePlaylist();
 
         try {
-            const response = await fetch('/api/playlist/tracks/', {
+            // Use Vercel serverless function for playlist processing
+            const response = await fetch('/api/download/playlist', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': this.getCSRFToken()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     playlist_url: playlistUrl
@@ -79,11 +79,19 @@ class PlaylistDownloader {
 
             const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to load playlist');
+            if (!data.success && data.error) {
+                throw new Error(data.error);
             }
 
-            this.currentPlaylist = data.playlist;
+            // Adapt the response format
+            this.currentPlaylist = {
+                name: data.name,
+                description: data.description,
+                owner: data.owner,
+                total_tracks: data.total_tracks,
+                public: data.public
+            };
+            
             this.currentTracks = data.tracks;
             this.selectedTracks.clear();
 
@@ -92,7 +100,7 @@ class PlaylistDownloader {
 
         } catch (error) {
             console.error('Error loading playlist:', error);
-            this.showError(error.message);
+            this.showError(error.message || 'Failed to load playlist');
         } finally {
             this.showLoading(false);
         }
@@ -422,37 +430,60 @@ class PlaylistDownloader {
     }
 
     async simulateYouTubeDownload(query, fileName, downloadFolder = null) {
-        // This simulates the download process
-        // In a real implementation, you would:
-        // 1. Search YouTube for the track
-        // 2. Get the video URL
-        // 3. Extract audio stream
-        // 4. Process/convert if needed
-        // 5. Save to selected folder or trigger download
-        
-        console.log(`Searching YouTube for: ${query}`);
-        await this.delay(1000); // Simulate search time
-        
-        console.log(`Found video for: ${fileName}`);
-        await this.delay(1000); // Simulate processing time
-        
-        // Simulate download trigger with folder support
-        await this.triggerDownloadWithFolder(fileName, downloadFolder, 'audio/mp3');
-        
-        console.log(`Download triggered for: ${fileName}`);
+        // Use Vercel serverless function for real audio processing
+        try {
+            console.log(`Downloading audio for: ${query}`);
+            
+            // Call Vercel serverless function
+            const response = await fetch('/api/download/audio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: query,
+                    quality: this.downloadSettings.audioQuality
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Download failed');
+            }
+            
+            // Convert base64 audio data to blob
+            const audioBytes = atob(data.audio_data);
+            const audioArray = new Uint8Array(audioBytes.length);
+            for (let i = 0; i < audioBytes.length; i++) {
+                audioArray[i] = audioBytes.charCodeAt(i);
+            }
+            const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
+            
+            // Trigger download with real audio data
+            await this.triggerDownloadWithFolder(fileName, downloadFolder, audioBlob);
+            
+            console.log(`Successfully downloaded: ${fileName}`);
+            return true;
+            
+        } catch (error) {
+            console.error(`Failed to download ${fileName}:`, error);
+            throw error;
+        }
     }
 
-    async triggerDownloadWithFolder(filename, downloadFolder, mimeType = 'audio/mp3') {
-        // Create a mock file for download demonstration
-        // In real implementation, this would be the actual audio data
-        const dummyContent = new Blob([`This is a placeholder for audio data: ${filename}`], { type: mimeType });
+    async triggerDownloadWithFolder(filename, downloadFolder, audioBlob) {
+        // Handle real audio data instead of dummy content
+        if (!audioBlob || audioBlob.size === 0) {
+            throw new Error('No audio data received');
+        }
         
         if (downloadFolder && 'createWritable' in FileSystemFileHandle.prototype) {
             try {
                 // Use File System Access API to save to selected folder
                 const fileHandle = await downloadFolder.getFileHandle(`${filename}.mp3`, { create: true });
                 const writable = await fileHandle.createWritable();
-                await writable.write(dummyContent);
+                await writable.write(audioBlob);
                 await writable.close();
                 
                 console.log(`File saved to selected folder: ${filename}.mp3`);
@@ -464,14 +495,18 @@ class PlaylistDownloader {
         }
         
         // Fallback to browser download
-        const url = URL.createObjectURL(dummyContent);
+        const url = URL.createObjectURL(audioBlob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `${filename}.mp3`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        
+        // Clean up object URL
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        
+        console.log(`File downloaded: ${filename}.mp3`);
     }
 
     updateTrackStatus(trackId, status, message) {
