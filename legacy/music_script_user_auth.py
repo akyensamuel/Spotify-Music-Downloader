@@ -91,7 +91,12 @@ def get_spotify_tracks_user_auth(playlist_url):
         return []
 
 # ---- Download from YouTube ----
-def download_from_youtube(search_query, output_folder='downloads'):
+def download_from_youtube(search_query, output_folder='downloads', quality='192'):
+    # Ensure output folder exists
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+        print(f"Created output folder: {output_folder}")
+        
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': f'{output_folder}/%(title)s.%(ext)s',
@@ -102,21 +107,80 @@ def download_from_youtube(search_query, output_folder='downloads'):
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
-            'preferredquality': '192',
+            'preferredquality': quality,
         }],
     }
-    
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             ydl.download([f"ytsearch1:{search_query}"])
+            return True
         except Exception as e:
             print(f"Failed to download {search_query}: {e}")
+            return False
+
+def get_download_settings():
+    """Get download folder and settings from user"""
+    print("\n=== Download Settings ===")
+    
+    # Get custom folder name
+    folder_name = input("Enter custom folder name (or press Enter for 'downloads'): ").strip()
+    if not folder_name:
+        folder_name = "downloads"
+    
+    # Get audio quality
+    print("\nSelect audio quality:")
+    print("1. 128 kbps (Low)")
+    print("2. 192 kbps (Standard) - Default")
+    print("3. 320 kbps (High)")
+    
+    while True:
+        quality_choice = input("Choose quality (1-3, or press Enter for default): ").strip()
+        if quality_choice == "1":
+            quality = "128"
+            break
+        elif quality_choice == "3":
+            quality = "320"
+            break
+        elif quality_choice == "2" or quality_choice == "":
+            quality = "192"
+            break
+        else:
+            print("Invalid choice. Please enter 1, 2, or 3.")
+    
+    # Ask if user wants to select custom path
+    print(f"\nCurrent download folder will be: {os.path.abspath(folder_name)}")
+    change_path = input("Do you want to choose a different location? (y/n): ").lower().strip()
+    
+    if change_path in ['y', 'yes']:
+        try:
+            import tkinter as tk
+            from tkinter import filedialog
+            
+            root = tk.Tk()
+            root.withdraw()  # Hide the main window
+            
+            custom_path = filedialog.askdirectory(
+                title="Select Download Folder",
+                initialdir=os.path.expanduser("~")
+            )
+            root.destroy()
+            
+            if custom_path:
+                folder_name = os.path.join(custom_path, folder_name)
+            else:
+                print("No folder selected. Using default location.")
+                
+        except ImportError:
+            print("GUI folder selection not available. Please install tkinter.")
+            custom_path = input("Enter full path to download folder (or press Enter for current directory): ").strip()
+            if custom_path and os.path.exists(os.path.dirname(custom_path)):
+                folder_name = custom_path
+    
+    return folder_name, quality
 
 # ---- Main Function ----
-def download_spotify_playlist(playlist_url):
+def download_spotify_playlist(playlist_url, output_folder='downloads', quality='192'):
     print("Fetching tracks from Spotify playlist (with user authentication)...")
     tracks = get_spotify_tracks_user_auth(playlist_url)
     
@@ -132,10 +196,13 @@ def download_spotify_playlist(playlist_url):
     for i, track in enumerate(tracks, 1):
         print(f"[{i}/{len(tracks)}] Downloading: {track}")
         try:
-            download_from_youtube(track)
-            successful_downloads += 1
+            if download_from_youtube(track, output_folder, quality):
+                successful_downloads += 1
+                print(f"✓ Successfully downloaded")
+            else:
+                failed_downloads += 1
         except Exception as e:
-            print(f"Failed to download '{track}': {e}")
+            print(f"✗ Failed to download '{track}': {e}")
             failed_downloads += 1
     
     print(f"\n=== Download Summary ===")
@@ -143,6 +210,7 @@ def download_spotify_playlist(playlist_url):
     if failed_downloads > 0:
         print(f"✗ Failed: {failed_downloads}")
     print(f"Total processed: {len(tracks)}")
+    print(f"Files saved to: {os.path.abspath(output_folder)}")
 
 # ---- Run the Script ----
 if __name__ == "__main__":
@@ -150,14 +218,23 @@ if __name__ == "__main__":
     print("This version can access both public and private playlists (if you have access).")
     print("You'll need to authorize the app in your browser on first run.\n")
     
-    spotify_url = input("Enter Spotify playlist URL: ").strip()
+    # Get download settings first
+    output_folder, audio_quality = get_download_settings()
+    print(f"\nDownload settings configured:")
+    print(f"📁 Folder: {output_folder}")
+    print(f"🎵 Quality: {audio_quality} kbps")
+    
+    spotify_url = input("\nEnter Spotify playlist URL: ").strip()
     
     if not spotify_url:
         print("✗ Error: No URL provided")
+        input("Press Enter to exit...")
         exit(1)
     
     if "spotify.com" not in spotify_url and len(spotify_url) != 22:
         print("✗ Error: Invalid Spotify URL or playlist ID")
+        input("Press Enter to exit...")
         exit(1)
     
-    download_spotify_playlist(spotify_url)
+    download_spotify_playlist(spotify_url, output_folder, audio_quality)
+    input("\nPress Enter to exit...")

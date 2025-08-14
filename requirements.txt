@@ -1,9 +1,27 @@
-certifi==2025.8.3
-charset-normalizer==3.4.2
-decouple==0.0.7
-idna==3.10
-redis==6.3.0
-requests==2.32.4
-spotipy==2.25.1
-urllib3==2.5.0
-yt-dlp==2025.7.21
+# Django and Web Framework
+Django>=5.2.0
+djangorestframework>=3.14.0
+django-cors-headers>=4.0.0
+gunicorn>=21.2.0
+
+# Configuration
+python-decouple>=3.8
+
+# Spotify API
+spotipy>=2.25.1
+
+# YouTube downloading (for legacy scripts)
+yt-dlp>=2025.7.21
+
+# Additional dependencies
+requests>=2.32.0
+redis>=6.3.0
+
+# Auto-installed dependencies (can be removed if not directly used)
+# asgiref>=3.9.1
+# certifi>=2025.8.3
+# charset-normalizer>=3.4.0
+# idna>=3.10
+# sqlparse>=0.5.3
+# tzdata>=2025.2
+# urllib3>=2.5.0
