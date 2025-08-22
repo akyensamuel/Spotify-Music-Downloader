@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Quick API Test</h1>
+    <button onclick="testWithSlash()">Test WITH slash</button>
+    <button onclick="testWithoutSlash()">Test WITHOUT slash</button>
+    <div id="result"></div>
+
+    <script>
+        async function testWithSlash() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing WITH slash...';
+            
+            try {
+                const response = await fetch('/api/download/playlist/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        playlist_url: 'https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M'
+                    })
+                });
+                
+                const data = await response.json();
+                result.innerHTML = `✅ WITH slash: ${response.status} - ${JSON.stringify(data)}`;
+            } catch (error) {
+                result.innerHTML = `❌ WITH slash error: ${error}`;
+            }
+        }
+
+        async function testWithoutSlash() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing WITHOUT slash...';
+            
+            try {
+                const response = await fetch('/api/download/playlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        playlist_url: 'https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M'
+                    })
+                });
+                
+                const data = await response.json();
+                result.innerHTML = `❌ WITHOUT slash: ${response.status} - ${JSON.stringify(data)}`;
+            } catch (error) {
+                result.innerHTML = `❌ WITHOUT slash error: ${error}`;
+            }
+        }
+    </script>
+</body>
+</html>

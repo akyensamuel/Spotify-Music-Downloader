@@ -1,0 +1,22 @@
+{
+  "name": "spotify-downloader",
+  "version": "1.0.0",
+  "description": "Spotify Playlist Downloader with Django backend and Vercel deployment",
+  "scripts": {
+    "vercel-build": "npm run build-static && npm run collect-static",
+    "build": "npm run build-static && npm run collect-static",
+    "build-static": "python manage.py collectstatic --noinput",
+    "collect-static": "python manage.py collectstatic --noinput --clear",
+    "migrate": "python manage.py migrate",
+    "dev": "python manage.py runserver",
+    "vercel-dev": "vercel dev",
+    "test-functions": "python test_vercel_functions.py"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}

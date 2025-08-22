@@ -2,19 +2,46 @@
   "version": 2,
   "builds": [
     {
+      "src": "build.py",
+      "use": "@vercel/python",
+      "config": { 
+        "maxLambdaSize": "15mb",
+        "runtime": "python3.9"
+      }
+    },
+    {
       "src": "spotify_downloader/wsgi.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb" }
+      "config": { 
+        "maxLambdaSize": "15mb",
+        "runtime": "python3.9"
+      }
+    },
+    {
+      "src": "api/download/*.py",
+      "use": "@vercel/python",
+      "config": { 
+        "maxLambdaSize": "15mb",
+        "runtime": "python3.9"
+      }
     },
     {
       "src": "static/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "staticfiles/**",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "/static/$1"
+      "dest": "/staticfiles/$1"
+    },
+    {
+      "src": "/staticfiles/(.*)",
+      "dest": "/staticfiles/$1"
     },
     {
       "src": "/api/download/(.*)",
@@ -33,6 +60,11 @@
     "api/download/*.py": {
       "maxDuration": 300,
       "memory": 1024
+    },
+    "spotify_downloader/wsgi.py": {
+      "maxDuration": 30,
+      "memory": 512
     }
-  }
+  },
+  "outputDirectory": "staticfiles"
 }

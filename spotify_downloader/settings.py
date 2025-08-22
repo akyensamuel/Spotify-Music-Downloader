@@ -50,6 +50,9 @@ INSTALLED_APPS = [
     'playlist_app',
 ]
 
+# URL configuration
+APPEND_SLASH = True  # Explicit setting (Django default)
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -127,6 +130,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/4.2/howto/static-files/
+
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
@@ -134,6 +140,11 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
+# Vercel static file handling
+if not DEBUG:
+    # Production static files configuration for Vercel
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -147,7 +158,15 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
 ]
 
+# Add Vercel domains to CORS
+if VERCEL_URL:
+    CORS_ALLOWED_ORIGINS.extend([
+        f"https://{VERCEL_URL}",
+        "https://*.vercel.app",
+    ])
+
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development only
 
 # Spotify API settings
 SPOTIFY_CLIENT_ID = config('SPOTIFY_CLIENT_ID')

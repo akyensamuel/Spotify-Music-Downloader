@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test - Fixed Version</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { padding: 10px 15px; margin: 5px; background: #007cba; color: white; border: none; cursor: pointer; }
+        button:hover { background: #005a87; }
+        #result { margin-top: 20px; padding: 15px; border: 1px solid #ddd; background: #f9f9f9; }
+        .error { background: #ffebee; border-color: #f44336; }
+        .success { background: #e8f5e8; border-color: #4caf50; }
+    </style>
+</head>
+<body>
+    <h1>🧪 API Test - Fixed Version</h1>
+    <p>Test the fixed API endpoints:</p>
+    
+    <button onclick="testPlaylistAPI()">Test Playlist API</button>
+    <button onclick="testCredentials()">Test Spotify Credentials</button>
+    
+    <div id="result">Click a button to test...</div>
+
+    <script>
+        async function testPlaylistAPI() {
+            const result = document.getElementById('result');
+            result.innerHTML = '🔄 Testing playlist API...';
+            result.className = '';
+            
+            try {
+                const response = await fetch('/api/download/playlist/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        playlist_url: 'https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M'
+                    })
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    result.innerHTML = `
+                        <h3>✅ Success!</h3>
+                        <p><strong>Playlist:</strong> ${data.name || 'Unknown'}</p>
+                        <p><strong>Owner:</strong> ${data.owner || 'Unknown'}</p>
+                        <p><strong>Tracks:</strong> ${data.total_tracks || 0}</p>
+                        <p><strong>First Track:</strong> ${data.tracks && data.tracks[0] ? data.tracks[0].name : 'None'}</p>
+                        <details>
+                            <summary>Full Response</summary>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    `;
+                    result.className = 'success';
+                } else {
+                    const errorText = await response.text();
+                    result.innerHTML = `
+                        <h3>❌ Error ${response.status}</h3>
+                        <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                        <p><strong>Response:</strong></p>
+                        <pre>${errorText}</pre>
+                    `;
+                    result.className = 'error';
+                }
+            } catch (error) {
+                result.innerHTML = `
+                    <h3>❌ Network Error</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p>Make sure Django server is running on port 8000!</p>
+                `;
+                result.className = 'error';
+            }
+        }
+
+        async function testCredentials() {
+            const result = document.getElementById('result');
+            result.innerHTML = '🔄 Testing with invalid URL to check credential loading...';
+            result.className = '';
+            
+            try {
+                const response = await fetch('/api/download/playlist/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        playlist_url: 'invalid-url'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error && data.error.includes('credentials not configured')) {
+                    result.innerHTML = `
+                        <h3>❌ Credentials Issue</h3>
+                        <p>Spotify API credentials are not properly loaded.</p>
+                        <p><strong>Error:</strong> ${data.error}</p>
+                        <p><strong>Fix:</strong> Check your .env file has SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET</p>
+                    `;
+                    result.className = 'error';
+                } else {
+                    result.innerHTML = `
+                        <h3>✅ Credentials Loaded</h3>
+                        <p>Spotify API credentials are working (got different error for invalid URL).</p>
+                        <p><strong>Response:</strong> ${data.error || 'Success'}</p>
+                    `;
+                    result.className = 'success';
+                }
+            } catch (error) {
+                result.innerHTML = `
+                    <h3>❌ Network Error</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                `;
+                result.className = 'error';
+            }
+        }
+    </script>
+</body>
+</html>
